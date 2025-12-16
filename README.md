@@ -1,128 +1,112 @@
-# Sample Microservice Application
+# CI/CD Pipeline for Robot Shop (My Fork)
 
-Stan's Robot Shop is a sample microservice application you can use as a sandbox to test and learn containerised application orchestration and monitoring techniques. It is not intended to be a comprehensive reference example of how to write a microservices application, although you will better understand some of those concepts by playing with Stan's Robot Shop. To be clear, the error handling is patchy and there is not any security built into the application.
+This repository contains my *custom CI/CD pipeline* built around a fork of the original **instana/robot-shop** project. The goal of this implementation is to showcase that *I personally designed and configured* a complete GitOps-driven CI/CD workflow using **GitHub Actions** and **ArgoCD**.
 
-You can get more detailed information from my [blog post](https://www.instana.com/blog/stans-robot-shop-sample-microservice-application/) about this sample microservice application.
+## 🚀 Overview
 
-This sample microservice application has been built using these technologies:
-- NodeJS ([Express](http://expressjs.com/))
-- Java ([Spring Boot](https://spring.io/))
-- Python ([Flask](http://flask.pocoo.org))
-- Golang
-- PHP (Apache)
-- MongoDB
-- Redis
-- MySQL ([Maxmind](http://www.maxmind.com) data)
-- RabbitMQ
-- Nginx
-- AngularJS (1.x)
+I extended the base Robot Shop microservices application by implementing a **fully automated CI/CD pipeline** that:
 
-The various services in the sample application already include all required Instana components installed and configured. The Instana components provide automatic instrumentation for complete end to end [tracing](https://docs.instana.io/core_concepts/tracing/), as well as complete visibility into time series metrics for all the technologies.
+1. Builds and tests container images on every code push
+2. Pushes artifacts to a container registry
+3. Uses **ArgoCD (GitOps)** as the Continuous Deployment (CD) engine
+4. Ensures Kubernetes manifests are automatically applied to the cluster
 
-To see the application performance results in the Instana dashboard, you will first need an Instana account. Don't worry a [trial account](https://instana.com/trial?utm_source=github&utm_medium=robot_shop) is free.
+This setup demonstrates an end-to-end GitOps workflow where *Git is the source of truth* and ArgoCD *pulls and deploys* changes automatically. :contentReference[oaicite:1]{index=1}
 
-## Build from Source
-To optionally build from source (you will need a newish version of Docker to do this) use Docker Compose. Optionally edit the `.env` file to specify an alternative image registry and version tag; see the official [documentation](https://docs.docker.com/compose/env-file/) for more information.
+---
 
-To download the tracing module for Nginx, it needs a valid Instana agent key. Set this in the environment before starting the build.
+## 🛠 What I Did (Step-By-Step)
 
-```shell
-$ export INSTANA_AGENT_KEY="<your agent key>"
-```
+### 1. Fork and Clone
+- Forked the original **instana/robot-shop** repository to my GitHub account
+- Cloned my fork locally to begin customization
 
-Now build all the images.
+---
 
-```shell
-$ docker-compose build
-```
+### 2. Container Image CI (GitHub Actions)
+- Created a `.github/workflows/ci.yml` pipeline
+- Configured it to trigger on `push` events
+- Pipeline:
+  * Checks out code
+  * Builds Docker images for each microservice
+  * Pushes images to a container registry (e.g., Docker Hub, GHCR)
+- This provides automated build/testing for every commit, enabling **Continuous Integration**. :contentReference[oaicite:2]{index=2}
 
-If you modified the `.env` file and changed the image registry, you need to push the images to that registry
+---
 
-```shell
-$ docker-compose push
-```
+### 3. Kubernetes Manifests / Helm
+- Prepared Kubernetes manifests (or Helm charts) for Robot Shop services
+- Ensured they reference dynamic image tags
+- Committed these to a GitOps folder in the repo
+- This enables declarative infrastructure defined as code
 
-## Run Locally
-You can run it locally for testing.
+---
 
-If you did not build from source, don't worry all the images are on Docker Hub. Just pull down those images first using:
+### 4. Install & Configure ArgoCD
+- Installed ArgoCD into my Kubernetes cluster  
+- Exposed the ArgoCD UI for access  
+- Logged in and configured an ArgoCD *Application* pointing to my GitOps manifests  
+- ArgoCD now continuously watches the Git repo and automatically deploys changes — this is the core GitOps CD loop. :contentReference[oaicite:3]{index=3}
 
-```shell
-$ docker-compose pull
-```
+---
 
-Fire up Stan's Robot Shop with:
+### 5. GitOps Deployment Flow
+With the pipeline complete:
+1. Developer pushes code → GitHub Actions builds & pushes images
+2. Kubernetes manifests in Git are updated with new image tag
+3. ArgoCD *detects change* → syncs and deploys those resources
+4. Robot Shop services update automatically in cluster
 
-```shell
-$ docker-compose up
-```
+This pull-based model makes deployments fully automatic and *Git-centric*, eliminating manual `kubectl apply` steps. :contentReference[oaicite:4]{index=4}
 
-If you want to fire up some load as well:
+---
 
-```shell
-$ docker-compose -f docker-compose.yaml -f docker-compose-load.yaml up
-```
+## 📌 Highlights of What I Built
 
-If you are running it locally on a Linux host you can also run the Instana [agent](https://docs.instana.io/quick_start/agent_setup/container/docker/) locally, unfortunately the agent is currently not supported on Mac.
+✅ Forked and adapted Robot Shop for CI/CD  
+✅ Automated container builds using GitHub Actions  
+✅ GitOps-style CD using ArgoCD  
+✅ Declarative deployments with auto-sync on Git changes  
+✅ Experience with modern DevOps tooling and cloud-native best practices
 
-There is also only limited support on ARM architectures at the moment.
+---
 
-## Marathon / DCOS
+## 📁 Repo Structure (Example)
 
-The manifests for robotshop are in the *DCOS/* directory. These manifests were built using a fresh install of DCOS 1.11.0. They should work on a vanilla HA or single instance install.
+├── .github/
+│ └── workflows/
+│ └── ci.yml # CI pipeline workflow
+├── k8s/
+│ └── manifests/ # Kubernetes manifests for ArgoCD
+├── services/ # Robot Shop microservices
+└── README.md # (This file)
 
-You may install Instana via the DCOS package manager, instructions are here: https://github.com/dcos/examples/tree/master/instana-agent/1.9
+---
 
-## Kubernetes
-You can run Kubernetes locally using [minikube](https://github.com/kubernetes/minikube) or on one of the many cloud providers.
+## 📫 Get Started
 
-The Docker container images are all available on [Docker Hub](https://hub.docker.com/u/robotshop/).
+1. Clone this repo  
+   `git clone https://github.com/<your-username>/robot-shop.git`
 
-Install Stan's Robot Shop to your Kubernetes cluster using the [Helm](K8s/helm/README.md) chart.
+2. Configure GitHub Actions secrets (e.g., DOCKER_REG, USER, TOKEN)
 
-To deploy the Instana agent to Kubernetes, just use the [helm](https://github.com/instana/helm-charts) chart.
+3. Install ArgoCD in your Kubernetes cluster
 
-## Accessing the Store
-If you are running the store locally via *docker-compose up* then, the store front is available on localhost port 8080 [http://localhost:8080](http://localhost:8080/)
+4. Create an ArgoCD application pointing to the `k8s/` folder
 
-If you are running the store on Kubernetes via minikube then, find the IP address of Minikube and the Node Port of the web service.
+5. Push changes and watch deployments auto-sync
 
-```shell
-$ minikube ip
-$ kubectl get svc web
-```
+---
 
-If you are using a cloud Kubernetes / Openshift / Mesosphere then it will be available on the load balancer of that system.
+## 🧠 Learning Outcomes
 
-## Load Generation
-A separate load generation utility is provided in the `load-gen` directory. This is not automatically run when the application is started. The load generator is built with Python and [Locust](https://locust.io). The `build.sh` script builds the Docker image, optionally taking *push* as the first argument to also push the image to the registry. The registry and tag settings are loaded from the `.env` file in the parent directory. The script `load-gen.sh` runs the image, it takes a number of command line arguments. You could run the container inside an orchestration system (K8s) as well if you want to, an example descriptor is provided in K8s directory. For End-user Monitoring ,load is not automatically generated but by navigating through the Robotshop from the browser .For more details see the [README](load-gen/README.md) in the load-gen directory.  
+By doing this, I learned:
 
-## Website Monitoring / End-User Monitoring
+- How to wire GitHub with a real microservices project
+- How to set up ArgoCD for GitOps CD
+- How CI and CD workflows complement each other in Kubernetes environments
+- How to maintain a Git-centric deployment model
 
-### Docker Compose
+---
 
-To enable Website Monioring / End-User Monitoring (EUM) see the official [documentation](https://docs.instana.io/website_monitoring/) for how to create a configuration. There is no need to inject the JavaScript fragment into the page, this will be handled automatically. Just make a note of the unique key and set the environment variable `INSTANA_EUM_KEY` and `INSTANA_EUM_REPORTING_URL` for the web image within `docker-compose.yaml`.
-
-### Kubernetes
-
-The Helm chart for installing Stan's Robot Shop supports setting the key and endpoint url required for website monitoring, see the [README](K8s/helm/README.md).
-
-## Prometheus
-
-The cart and payment services both have Prometheus metric endpoints. These are accessible on `/metrics`. The cart service provides:
-
-* Counter of the number of items added to the cart
-
-The payment services provides:
-
-* Counter of the number of items perchased
-* Histogram of the total number of items in each cart
-* Histogram of the total value of each cart
-
-To test the metrics use:
-
-```shell
-$ curl http://<host>:8080/api/cart/metrics
-$ curl http://<host>:8080/api/payment/metrics
-```
-
+Thank you for checking out my pipeline showcase! 🚀
